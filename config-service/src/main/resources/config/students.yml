@@ -1,0 +1,11 @@
+server:
+  port: 8081
+spring:
+  datasource:
+    url: ${SPRING_POSTGRES_DATASOURCE_URL}
+    username: ${SPRING_POSTGRES_DATASOURCE_USERNAME}
+    password: ${SPRING_POSTGRES_DATASOURCE_PASSWORD}
+  jpa:
+    show-sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVER}

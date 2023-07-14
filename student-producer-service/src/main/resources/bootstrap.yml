@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: student-producer
+  cloud:
+    config:
+      uri: ${SPRING_CONFIG_SERVER_URL}

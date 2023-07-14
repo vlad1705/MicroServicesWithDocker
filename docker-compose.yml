@@ -1,0 +1,94 @@
+version: '3.9'
+
+services:
+  config-service:
+    container_name: config-service
+    build: ./config-service
+    ports:
+      - 8888:8888
+  discovery-service:
+    container_name: discovery-service
+    build: ./discovery-service
+    ports:
+      - 8761:8761
+    depends_on:
+      - config-service
+  sport-service:
+    build: ./sport-service
+    container_name: sport-service
+    depends_on:
+      - config-service
+      - sport-db
+    ports:
+      - 8080:8080
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://sport-db:3306/sport
+      - SPRING_DATASOURCE_USERNAME=myuser
+      - SPRING_DATASOURCE_PASSWORD=myuserpassword
+      - SPRING_CONFIG_SERVER_URL=http://config-service:8888
+      - eureka.client.service-url.defaultZone=http://discovery-service:8761/eureka
+  sport-db:
+    image: mysql
+    container_name: sport-db
+    ports:
+      - 3307:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=mysecretpassword
+      - MYSQL_DATABASE=sport
+      - MYSQL_USER=myuser
+      - MYSQL_PASSWORD=myuserpassword
+  student-producer-service:
+    build: ./student-producer-service
+    container_name: student-producer-service
+    depends_on:
+      - kafka
+      - config-service
+    ports:
+      - 8082:8082
+    environment:
+      - SPRING_CONFIG_SERVER_URL=http://config-service:8888
+      - KAFKA_BOOTSTRAP_SERVER=kafka:9092
+  kafka:
+    image: debezium/kafka:1.9
+    restart: always
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    environment:
+      - ZOOKEEPER_CONNECT=zookeeper:2181
+      - ADVERTISED_HOST_NAME=host.docker.internal
+  zookeeper:
+    image: debezium/zookeeper:1.9
+    restart: always
+    ports:
+      - 2181:2181
+      - 2888:2888
+      - 3888:3888
+
+  student-service:
+    build: ./student-service
+    container_name: student-service
+    ports:
+      - 8081:8081
+    depends_on:
+      - config-service
+      - student-db
+      - kafka
+    environment:
+      - SPRING_POSTGRES_DATASOURCE_URL=jdbc:postgresql://student-db:5432/dvdrental
+      - SPRING_POSTGRES_DATASOURCE_USERNAME=postgres
+      - SPRING_POSTGRES_DATASOURCE_PASSWORD=password
+      - SPRING_CONFIG_SERVER_URL=http://config-service:8888
+      - KAFKA_BOOTSTRAP_SERVER=kafka:9092
+      - eureka.client.service-url.defaultZone=http://discovery-service:8761/eureka
+  student-db:
+    image: postgres:latest
+    restart: always
+    container_name: student-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dvdrental
+    ports:
+      - 5433:5432

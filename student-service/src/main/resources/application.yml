@@ -1,0 +1,14 @@
+resilience4j:
+  circuitbreaker:
+    instances:
+      sport-service:
+        minimum-number-of-calls: 5
+        slow-call-duration-threshold: 1000ms
+
+feign:
+  circuitbreaker:
+    enable: true
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
